@@ -1,56 +1,41 @@
-const { GraphQLError } = require('graphql')
-
 const transactionOptions = {
   readPreference: 'primary',
   readConcern: { level: 'majority' },
   writeConcern: { w: 'majority' }
 };
-
+let numbers = 0;
 module.exports = {
   Query: {
     getResources: async (_, { input }, { req, res, client }) => {
-      const resourcesCollection = await client.db("counter").collection("resources")
       const session = await client.startSession()
       let resources;
 
       try {
         const transactionResult = await session.withTransaction(async () => {
           resources = await resourcesCollection.findOne({ resources: input?.resources }, { session })
+          const resourcesCollection = await client.db("counter").collection("resources")
         }, transactionOptions)
-        if (transactionResult) {
-          return resources ? resources : null
-        } else {
-          await session.abortTransaction()
-          return null
-        }
+        return resources ? resources : null
       } catch (e) {
-        console.log("hata");
-        //session.abortTransaction() otomatik abort ediyor
-        throw GraphQLError("bir hata oluştu")
+        console.log("hata: "+e);
       } finally {
         await session.endSession()
       }
     },
     getAllResources: async (_, { input }, { req, res, client }) => {
-      const resourcesCollection = await client.db("counter").collection("resources")
+
       const session = client.startSession()
       let resources;
 
       try {
         const transactionResult = await session.withTransaction(async () => {
+          const resourcesCollection = await client.db("counter").collection("resources")
           resources = await resourcesCollection.find({}, { session }).toArray()
         }, transactionOptions)
-        if (transactionResult) {
-          return resources ? resources : null
-        } else {
-          await session.abortTransaction()
-          return null
-        }
+        return resources ? resources : null
 
       } catch (e) {
-        console.log("hata");
-        //session.abortTransaction() otomatik abort ediyor
-        throw GraphQLError("bir hata oluştu")
+        console.log("hata: "+ e);
       } finally {
         await session.endSession()
       }
@@ -67,9 +52,7 @@ module.exports = {
         const transactionResult = await session.withTransaction(async () => {
           const findOldData = await resourcesCollection.findOne({ resources: input?.resources }, { session })
           if (findOldData) {
-            await session.abortTransaction()
-            console.error("hata")
-            return null;
+            throw new Error("böyle bir veri var")
           }
           resourcesId = await resourcesCollection.insertOne({
             resources: input?.resources,
@@ -78,67 +61,55 @@ module.exports = {
 
         }, transactionOptions)
 
-        if (transactionResult) {
-          const resources = await resourcesCollection.findOne({ _id: resourcesId?.insertedId }, { session })
-          return resources ? resources : null
-        } else {
-          await session.abortTransaction()
-          return null
-        }
+        const resources = await resourcesCollection.findOne({ _id: resourcesId?.insertedId }, { session })
+        return resources ? resources : null
 
       } catch (e) {
         console.log("hata: " + e);
-        //session.abortTransaction() otomatik abort ediyor
-        throw GraphQLError("bir hata oluştu")
+
       } finally {
         await session.endSession()
       }
     },
     updateResources: async (_, { input }, { req, res, client }) => {
-      const resourcesCollection = await client.db("counter").collection("resources")
+
       const session = await client.startSession()
+      try {
+        await session.withTransaction(async () => {
+          const resourcesCollection = await client.db("counter").collection("resources")
+          const recordCollection = await client.db("counter").collection("kayit")
+          const resources = await resourcesCollection.findOneAndUpdate({ resources: input?.resources }, {
+            $inc: { counter: 1 }
+          }, { session })
+          numbers = numbers + 1
+          await recordCollection.insertOne({ res: resources.value.resources, counter: resources.value.counter, number: numbers, node: "node1" }, { session })
+
+          console.log("numbers:" + numbers);
+          if (numbers % 2 === 0) {
+            throw new Error("mod")
+          } else {
+            return resources ? resources.value : null
+          }
+        }, transactionOptions);
+      } catch (e) {
+        console.log("hata: ", e);
+      } finally {
+        await session.endSession();
+      }
+    },
+    deleteResources: async (_, { input }, { req, res, client }) => {
+      const session = client.startSession()
       let resources;
 
       try {
         const transactionResult = await session.withTransaction(async () => {
-          resources = await resourcesCollection.findOneAndUpdate({ resources: input?.resources }, {
-            $inc: { counter: 1 }
-          }, { session })
-
+          const resourcesCollection = client.db("counter").collection("resources")
+          resources = await resourcesCollection.findOneAndDelete({ resources: input?.resources }, { session })
         }, transactionOptions)
-
-        if (transactionResult) {
-          return resources ? resources.value : null
-        } else {
-          console.log("transaction aborted");
-          session.abortTransaction()
-          return null
-        }
+        return resources ? resources.value : null
       } catch (e) {
-        //hata fırlatımı
-        console.log("hata: " + e);
-      } finally {
-        await session.endSession()
-      }
-    },
-    deleteResources: async (_, { input }, { req, res, client}) => {
-      const resourcesCollection = client.db("counter").collection("resources")
-      const session = client.startSession()
-      let resources;
-
-      try{
-        const transactionResult = await session.withTransaction(async()=>{
-          resources = await resourcesCollection.findOneAndDelete({resources: input?.resources},{ session })
-        }, transactionOptions)
-        if(transactionResult){
-          return resources ? resources.value : null
-        }else{
-          await session.abortTransaction()
-          return null
-        }
-      }catch(e){
         console.log("hata: " + e)
-      }finally{
+      } finally {
         await session.endSession()
       }
     }

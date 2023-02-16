@@ -1,7 +1,8 @@
 const { MongoClient } = require('mongodb')
 let client
 async function mongo(){
-  const uri = "mongodb+srv://adnanfurkan:*****@rafyonetimi.uiemr8z.mongodb.net/?retryWrites=true&w=majority"
+  //atlas url
+  const uri = ""
   client = new MongoClient(uri)
   try{
     await client.connect()
