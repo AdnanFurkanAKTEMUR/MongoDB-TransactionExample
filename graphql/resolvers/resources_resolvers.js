@@ -12,8 +12,9 @@ module.exports = {
 
       try {
         const transactionResult = await session.withTransaction(async () => {
-          resources = await resourcesCollection.findOne({ resources: input?.resources }, { session })
           const resourcesCollection = await client.db("counter").collection("resources")
+          resources = await resourcesCollection.findOne({ resources: input?.resources }, { session })
+          
         }, transactionOptions)
         return resources ? resources : null
       } catch (e) {
