@@ -19,6 +19,7 @@ module.exports = {
         return resources ? resources : null
       } catch (e) {
         console.log("hata: "+e);
+        throw new Error("hata: "+ e)
       } finally {
         await session.endSession()
       }
@@ -37,6 +38,7 @@ module.exports = {
 
       } catch (e) {
         console.log("hata: "+ e);
+        throw new Error("hata: "+ e)
       } finally {
         await session.endSession()
       }
@@ -67,10 +69,11 @@ module.exports = {
 
       } catch (e) {
         console.log("hata: " + e);
-
+        throw new Error("hata: "+ e)
       } finally {
         await session.endSession()
       }
+
     },
     updateResources: async (_, { input }, { req, res, client }) => {
 
@@ -94,6 +97,7 @@ module.exports = {
         }, transactionOptions);
       } catch (e) {
         console.log("hata: ", e);
+        throw new Error("hata: "+ e)
       } finally {
         await session.endSession();
       }
@@ -110,6 +114,7 @@ module.exports = {
         return resources ? resources.value : null
       } catch (e) {
         console.log("hata: " + e)
+        throw new Error("hata: "+ e)
       } finally {
         await session.endSession()
       }
