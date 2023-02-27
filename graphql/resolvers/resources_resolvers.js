@@ -118,6 +118,28 @@ module.exports = {
       } finally {
         await session.endSession()
       }
+    },
+
+    insertMultiDocument: async (_, __, { req, res, client }) => {
+      const session = client.startSession()
+      const myString = "sdaşlaşdlaşdalşsaşdsaskdfsnkjfdfjekıjewjıfdfıjsvcjsdnsldjfweoıfhewouhewokd903328239432ıuweıofjsdfhsdjfajksdfhwehr983yr3498tyeeoıhsddahgkjasdhgweohg8934thoefwk"
+      try{
+        await session.withTransaction(async () => {
+          const multiRecordCollection = client.db("counter").collection("multi_record")
+          for(let i = 0; i<50000; i++){
+            
+            await multiRecordCollection.insertOne({
+              myString: myString,
+              i: i
+            }, { session })
+          }
+        })
+        return null
+      } catch(e){
+        console.log("hata: " + e);
+      } finally {
+        await session.endSession()
+      }
     }
   }
 }

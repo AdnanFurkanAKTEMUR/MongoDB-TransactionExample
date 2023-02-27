@@ -19,5 +19,6 @@ type Mutation {
   updateResources(input: getResourcesInput): Resources
   deleteResources(input: getResourcesInput): Resources
   createResources(input: getResourcesInput): Resources
+  insertMultiDocument: [Resources]
 }
 `
