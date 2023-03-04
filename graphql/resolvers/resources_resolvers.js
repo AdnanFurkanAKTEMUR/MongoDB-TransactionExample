@@ -122,21 +122,111 @@ module.exports = {
 
     insertMultiDocument: async (_, __, { req, res, client }) => {
       const session = client.startSession()
-      const myString = "sdaşlaşdlaşdalşsaşdsaskdfsnkjfdfjekıjewjıfdfıjsvcjsdnsldjfweoıfhewouhewokd903328239432ıuweıofjsdfhsdjfajksdfhwehr983yr3498tyeeoıhsddahgkjasdhgweohg8934thoefwk"
+      const myString = {
+        baslik: " Mongo ile teste doğru",
+        konu: {
+          konu1: `
+          module.exports = gql
+          type Resources {
+              _id: String
+              resources: String
+              counter: Int
+          }
+
+          input getResourcesInput {
+            resources:String!
+          }
+
+          type Query {
+            getAllResources: [Resources]
+            getResources(input: getResourcesInput): Resources
+          }
+          type Mutation {
+            updateResources(input: getResourcesInput): Resources
+            deleteResources(input: getResourcesInput): Resources
+            createResources(input: getResourcesInput): Resources
+            insertMultiDocument: [Resources]
+          }
+          module.exports = gql
+          type Resources {
+              _id: String
+              resources: String
+              counter: Int
+          }
+
+          input getResourcesInput {
+            resources:String!
+          }
+
+          type Query {
+            getAllResources: [Resources]
+            getResources(input: getResourcesInput): Resources
+          }
+          type Mutation {
+            updateResources(input: getResourcesInput): Resources
+            deleteResources(input: getResourcesInput): Resources
+            createResources(input: getResourcesInput): Resources
+            insertMultiDocument: [Resources]
+          }
+          `,
+          konu2: `module.exports = gql
+          type Resources {
+              _id: String
+              resources: String
+              counter: Int
+          }
+
+          input getResourcesInput {
+            resources:String!
+          }
+
+          type Query {
+            getAllResources: [Resources]
+            getResources(input: getResourcesInput): Resources
+          }
+          type Mutation {
+            updateResources(input: getResourcesInput): Resources
+            deleteResources(input: getResourcesInput): Resources
+            createResources(input: getResourcesInput): Resources
+            insertMultiDocument: [Resources]
+          }`
+        }
+      }
       try{
-        await session.withTransaction(async () => {
+        /*await session.withTransaction(async () => {
           const multiRecordCollection = client.db("counter").collection("multi_record")
+          multiRecordCollection.createIndex({ email: 1 }, { unique: true }, function(err, result) {
+            console.log(err);
+            console.log(result);
+          });
           for(let i = 0; i<50000; i++){
-            
+            console.log(i);
             await multiRecordCollection.insertOne({
               myString: myString,
-              i: i
+              email: `${i}.index`
             }, { session })
           }
         })
-        return null
+        return null*/
+        session.startTransaction(transactionOptions)
+        const multiRecordCollection = client.db("counter").collection("multi_record")
+        multiRecordCollection.createIndex({ email: 1 }, { unique: true }, function(err, result) {
+          console.log(err);
+          console.log(result);
+        });
+        for(let i = 0; i<50000; i++){
+          console.log(i);
+          await multiRecordCollection.insertOne({
+            myString: myString,
+            email: `${i}.index`
+          }, { session })
+        }
+        await session.commitTransaction();
+        console.log('Transaction successfully committed.');
+
       } catch(e){
         console.log("hata: " + e);
+        await session.abortTransaction();
       } finally {
         await session.endSession()
       }
